@@ -87,10 +87,15 @@
     </dd>
     <dt><code>calculate_moon_sign</code>, <code>check_mangal_dosh</code>, <code>check_sade_sati</code></dt>
     <dd>
-      Real calculations against a live Swiss-Ephemeris backend. They are not in
-      the toolset at all until a place is confirmed — <code>provideContext</code>
-      re-publishes the set on every state change, so the agent cannot reach for a
-      chart it has no coordinates for.
+      Real calculations against a live Swiss-Ephemeris backend, gated on a
+      confirmed place. How that gate is enforced depends on what the browser
+      implements, and the banner at the top says which one you are getting.
+      Where <code>provideContext</code> exists the page republishes the toolset
+      on every state change, so these are <em>not offered at all</em> before
+      confirmation. Chrome ships <code>registerTool</code> without
+      <code>provideContext</code> or <code>unregisterTool</code>, so a page
+      cannot withdraw what it has published — there all five stay registered and
+      these three refuse at call time instead. Same outcome, weaker guarantee.
     </dd>
   </dl>
 </section>
