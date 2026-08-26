@@ -18,8 +18,10 @@ const ALLOWED = {
 };
 
 export default async function handler(request, response) {
-  const segments = [].concat(request.query.path || []);
-  const path = segments.join("/");
+  // Parsed from the URL rather than a framework-specific catch-all param, so
+  // this behaves the same locally, on Vercel, and anywhere else it is hosted.
+  const requestUrl = new URL(request.url, "http://localhost");
+  const path = requestUrl.pathname.replace(/^\/api\//, "").replace(/\/+$/, "");
   const expected = ALLOWED[path];
 
   if (!expected) {
@@ -31,8 +33,8 @@ export default async function handler(request, response) {
 
   const url = new URL(`${UPSTREAM}/${path}`);
   if (expected === "GET") {
-    const q = request.query.q;
-    if (typeof q === "string") url.searchParams.set("q", q);
+    const q = requestUrl.searchParams.get("q");
+    if (q) url.searchParams.set("q", q);
   }
 
   try {
