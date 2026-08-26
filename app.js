@@ -99,9 +99,13 @@ function renderTools() {
 function renderBanner() {
   const banner = el("state-banner");
   if (!banner) return;
+  // Say which guarantee is actually in force, not the one we would prefer.
+  const withheld = webmcpMode() === "replaceable";
   banner.textContent = state.place
-    ? "Place confirmed — all five tools offered"
-    : "No place confirmed — the calculators are withheld";
+    ? "Place confirmed — the calculators will run"
+    : withheld
+      ? "No place confirmed — the calculators are not offered"
+      : "No place confirmed — the calculators will refuse to run";
   banner.className = state.place ? "banner ok" : "banner waiting";
 }
 
@@ -126,31 +130,71 @@ function currentTools() {
 
 let lastSignature = "";
 
+// Chrome does not ship the whole proposal. Chrome 151 exposes registerTool,
+// getTools and executeTool on navigator.modelContext, but no provideContext
+// and no unregisterTool — so a page cannot always withdraw a tool it has
+// already published. Detect what exists rather than assuming the spec.
+export function webmcpMode() {
+  const context = typeof navigator !== "undefined" ? navigator.modelContext : null;
+  if (!context) return "absent";
+  if (typeof context.provideContext === "function") return "replaceable";
+  if (typeof context.registerTool === "function") return "additive";
+  return "unusable";
+}
+
 function syncToolset() {
   const context = navigator.modelContext;
   if (!context) return;
+  const mode = webmcpMode();
 
-  const tools = currentTools();
-  const signature = tools.map((tool) => tool.name).join(",");
-  if (signature === lastSignature) return;
-  lastSignature = signature;
+  if (mode === "replaceable") {
+    // The clean path: republish the set that is true right now, so a tool the
+    // page cannot honour is not merely refused, it is not offered.
+    const tools = currentTools();
+    const signature = tools.map((tool) => tool.name).join(",");
+    if (signature === lastSignature) return;
+    lastSignature = signature;
+    context.provideContext({ tools });
+    state.registered = tools.map((tool) => tool.name);
+    log("state", `Toolset republished — ${state.registered.length} offered`);
+    return;
+  }
 
-  // provideContext replaces the whole toolset, which is what a state change
-  // means here: the previous set is no longer true of this page.
-  context.provideContext({ tools });
-  state.registered = tools.map((tool) => tool.name);
-  log("state", `Toolset now offers ${state.registered.length}: ${state.registered.join(", ")}`);
+  if (mode !== "additive") return;
+
+  // Additive-only: every tool is registered once and stays registered, so the
+  // gate has to live inside the tool. requireConfirmedPlace() throws with an
+  // instruction rather than returning a chart from coordinates nobody chose —
+  // a weaker guarantee than withholding it, but the same outcome for the user.
+  if (lastSignature) return;
+  lastSignature = "all";
+  const all = TOOLSET.confirmed.map((name) => TOOLS[name]);
+  for (const tool of all) context.registerTool(tool);
+  state.registered = all.map((tool) => tool.name);
+  log("state", `Registered ${all.length} tools (additive API — calculators self-gate)`);
 }
 
 function boot() {
-  const supported = typeof navigator !== "undefined" && "modelContext" in navigator;
+  const mode = webmcpMode();
   const notice = el("support");
   if (notice) {
-    notice.className = supported ? "banner ok" : "banner missing";
-    notice.innerHTML = supported
-      ? "WebMCP detected — this page registers its tools with the agent."
-      : "WebMCP is not available in this browser, so no tools are registered. " +
-        "The demo below still explains what would happen. See the README to enable it.";
+    const message = {
+      replaceable:
+        "WebMCP detected, with provideContext — the toolset is republished on " +
+        "every state change, so the calculators are not offered until a place is confirmed.",
+      additive:
+        "WebMCP detected, registerTool only — this build has no provideContext, " +
+        "so all five tools stay registered and the calculators refuse to run " +
+        "until a place is confirmed.",
+      unusable:
+        "navigator.modelContext exists but exposes neither provideContext nor " +
+        "registerTool, so no tools could be published.",
+      absent:
+        "WebMCP is not available in this browser, so no tools are registered. " +
+        "The page still explains what would happen — see the README to enable it.",
+    }[mode];
+    notice.className = mode === "absent" || mode === "unusable" ? "banner missing" : "banner ok";
+    notice.textContent = message;
   }
   render();
   renderLog();

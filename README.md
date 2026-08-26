@@ -27,12 +27,24 @@ Three ideas, all of them things a DOM-scraping agent cannot do:
 more than one comes back, the tool result itself says the user has to choose.
 The tool never picks.
 
-**2. The dangerous tools do not exist until a human has answered.**
-`calculate_moon_sign`, `check_mangal_dosh` and `check_sade_sati` are not in the
-toolset at all until a place is confirmed. The page calls
-`navigator.modelContext.provideContext()` on every state change to re-publish
-what is currently true. Withholding the tool is a stronger guarantee than
-asking a model nicely not to guess.
+**2. The dangerous tools are gated on a human having answered.**
+`calculate_moon_sign`, `check_mangal_dosh` and `check_sade_sati` do nothing
+until a place is confirmed.
+
+How that gate is enforced depends on what the browser actually implements, and
+the two are not equivalent:
+
+- **`provideContext` available** — the page republishes the toolset on every
+  state change, so before confirmation the calculators are *not offered at all*.
+  An agent cannot call a tool it was never handed.
+- **`registerTool` only** — Chrome 151 exposes `registerTool`, `getTools` and
+  `executeTool` but **no `provideContext` and no `unregisterTool`**, so a page
+  cannot withdraw a tool it has published. All five stay registered and the
+  calculators refuse at call time with an instruction to resolve the place
+  first. Same outcome for the user, weaker guarantee.
+
+The page detects which surface exists and says so in the banner at the top,
+rather than claiming the stronger guarantee in both cases.
 
 **3. Confirmation is validated, not trusted.**
 `confirm_birth_place` rejects any name that was not among the candidates, and
