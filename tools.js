@@ -99,18 +99,27 @@ export const TOOLS = {
     },
     async execute({ name, state: region }) {
       log("tool", `confirm_birth_place("${name}"${region ? `, "${region}"` : ""})`);
-      const pool = state.candidates.length
-        ? state.candidates
-        : (await api(`places?q=${encodeURIComponent(name)}`)).results || [];
 
-      const matches = pool.filter(
-        (item) =>
-          item.name.toLowerCase() === name.toLowerCase() &&
-          (!region || (item.state || "").toLowerCase() === region.toLowerCase()),
-      );
+      const pick = (pool) =>
+        pool.filter(
+          (item) =>
+            item.name.toLowerCase() === name.toLowerCase() &&
+            (!region || (item.state || "").toLowerCase() === region.toLowerCase()),
+        );
+
+      // The user may name a place the earlier partial search never surfaced —
+      // searching "jai" does not return Jaipur, because short prefixes rank
+      // shorter names first. Answering "Jaipur" is still a valid answer, so
+      // look it up rather than rejecting it.
+      let matches = pick(state.candidates);
+      if (matches.length === 0) {
+        const { results = [] } = await api(`places?q=${encodeURIComponent(name)}`);
+        matches = pick(results);
+      }
       if (matches.length === 0) {
         throw new Error(
-          `"${name}" is not one of the candidates. Call resolve_birth_place and choose from what it returns.`,
+          `No place called "${name}"${region ? ` in ${region}` : ""}. ` +
+            "Call resolve_birth_place and ask the user to choose from what it returns.",
         );
       }
       if (matches.length > 1) {
