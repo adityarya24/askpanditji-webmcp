@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask before you guess — a WebMCP demo</title>
+<meta name="description" content="A WebMCP demo where the site refuses to let an agent guess your birth place, because a guess produces a confident wrong horoscope." />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<header class="page-head">
+  <p class="eyebrow">WebMCP Challenge</p>
+  <h1>Ask before you guess.</h1>
+  <p class="lede">
+    A horoscope is computed from coordinates. Get the birth place wrong and nothing
+    errors — you just get a confident, wrong answer. So this page hands the agent a
+    tool that <strong>returns candidates instead of a decision</strong>, and withholds
+    the calculators until a human has chosen one.
+  </p>
+  <p id="support" class="banner">Checking for WebMCP…</p>
+</header>
+
+<main>
+
+<section class="panel problem">
+  <h2>The failure this fixes</h2>
+  <p>
+    Indian place names collide. Ask for <code>jai</code> and a village called
+    <strong>Jai</strong> outranks <strong>Jaipur</strong>; ask for
+    <code>jaipur</code> and <strong>Bijaipur, Madhya Pradesh</strong> is right
+    behind it. An agent filling a form picks one and moves on. Four minutes of
+    birth-time error moves the Lagna; several hundred kilometres of birth-place
+    error moves everything.
+  </p>
+  <p class="quiet">
+    The failure is silent. That is what makes it worth a tool rather than a
+    better prompt.
+  </p>
+</section>
+
+<section class="panel">
+  <h2>Try it</h2>
+  <p class="quiet">
+    With WebMCP enabled, ask your agent something like
+    <em>“What is my moon sign? I was born 15 August 1995 at 14:30 in jaipur.”</em>
+    Watch what it does with the place.
+  </p>
+  <p id="state-banner" class="banner waiting">No place confirmed</p>
+
+  <div class="grid">
+    <div>
+      <h3>Birth place</h3>
+      <div id="place"><p class="empty">No birth place resolved yet.</p></div>
+    </div>
+    <div>
+      <h3>Tools offered right now</h3>
+      <ul id="tools" class="tools"></ul>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Result</h2>
+  <div id="result"><p class="empty">No calculation yet.</p></div>
+</section>
+
+<section class="panel">
+  <h2>Agent activity</h2>
+  <p class="quiet">Every tool call the agent makes on this page, as it happens.</p>
+  <ul id="log" class="log"></ul>
+</section>
+
+<section class="panel">
+  <h2>How the tools are shaped</h2>
+  <dl class="tools-doc">
+    <dt><code>resolve_birth_place</code></dt>
+    <dd>
+      Returns <em>every</em> match with its state and coordinates. When more than
+      one comes back it says, in the tool result itself, that the user has to
+      choose. The tool never picks.
+    </dd>
+    <dt><code>confirm_birth_place</code></dt>
+    <dd>
+      Records the human's answer. Rejects anything that was not among the
+      candidates, and refuses a name that is still ambiguous across states.
+    </dd>
+    <dt><code>calculate_moon_sign</code>, <code>check_mangal_dosh</code>, <code>check_sade_sati</code></dt>
+    <dd>
+      Real calculations against a live Swiss-Ephemeris backend. They are not in
+      the toolset at all until a place is confirmed — <code>provideContext</code>
+      re-publishes the set on every state change, so the agent cannot reach for a
+      chart it has no coordinates for.
+    </dd>
+  </dl>
+</section>
+
+<footer class="page-foot">
+  <p>
+    Open source, MIT.
+    <a href="https://github.com/adityarya24/askpanditji-webmcp">Source</a> ·
+    calculations by <a href="https://askpanditji.co.in">AskPanditJi</a> ·
+    built by the author of <a href="https://github.com/adityarya24/mindsync-ai">mindsync-ai</a>.
+  </p>
+  <p class="quiet">
+    Astrology is interpretive guidance, not a guarantee of events or outcomes.
+  </p>
+</footer>
+
+</main>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
