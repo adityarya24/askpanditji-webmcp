@@ -61,7 +61,7 @@ refuses a name that is still ambiguous across two states.
 | `check_sade_sati` | after confirmation | Sade Sati / Dhaiya phase and window |
 
 The calculations are real, served by the Swiss-Ephemeris backend behind
-[askpanditji.co.in](https://askpanditji.co.in). Nothing here is mocked.
+[vedpatrika.in](https://vedpatrika.in). Nothing here is mocked.
 
 ## Trying it
 

@@ -1,6 +1,6 @@
-// Same-origin proxy to the AskPanditJi astrology API.
+// Same-origin proxy to the VedPatrika astrology API.
 //
-// The page cannot call api.askpanditji.co.in directly: that service sets no
+// The page cannot call api.vedpatrika.in directly: that service sets no
 // CORS headers, so the browser blocks the request before it leaves. Proxying
 // here keeps the demo self-contained and means the production API needs no
 // changes for a hackathon entry.
@@ -8,7 +8,7 @@
 // The path allowlist matters. Without it this is an open proxy that anyone can
 // point at any upstream path.
 
-const UPSTREAM = "https://api.askpanditji.co.in";
+const UPSTREAM = "https://api.vedpatrika.in";
 
 const ALLOWED = {
   places: "GET",
